@@ -33,14 +33,23 @@ type Article struct {
 	UpdatedAt           time.Time
 }
 
+type User struct {
+	ID 					int
+	Name 				string
+}
+
 type Collection struct {
 	Index []Article
+}
+
+type Group struct {
+	Index []User
 }
 
 func main() {
 	initDb()
 	http.HandleFunc("/api/articles", articlesHandler)
-	//http.HandleFunc("/api/users", usersHandler)
+	http.HandleFunc("/api/users", usersHandler)
 	defer db.Close()
 
 	log.Fatal(http.ListenAndServe("localhost:3001", nil))
@@ -63,12 +72,7 @@ func initDb() {
 	fmt.Println("Successfully connected!")
 }
 
-func articlesHandler(w http.ResponseWriter, r *http.Request) {
-	//var (
-	//	ID, external_reference_id int
-	//	URL, UrlToImage, Source, Body, Title, created_at, updated_ad string
-	//
-	//
+func articlesHandler(w http.ResponseWriter, _ *http.Request) {
 	collection := Collection{}
 
 	err := queryArticles(&collection)
@@ -120,5 +124,52 @@ func queryArticles(collection *Collection) error {
 	}
 	return nil
 }
+
+func usersHandler(w http.ResponseWriter, _ *http.Request) {
+	group := Group{}
+
+	err := queryUsers(&group)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	out, err := json.Marshal(group)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	fmt.Fprintf(w, string(out))
+
+}
+
+func queryUsers(group *Group) error {
+	rows, err := db.Query(`SELECT t.* FROM collections.users t`)
+	if err != nil {
+		return err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		user := User{}
+		err = rows.Scan(
+			&user.ID,
+			&user.Name)
+		if err != nil {
+			return err
+		}
+
+		group.Index = append(group.Index, user)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 
 
