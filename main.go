@@ -3,7 +3,9 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"flag"
 	"fmt"
+	"github.com/gorilla/websocket"
 	_ "github.com/lib/pq"
 	"log"
 	"net/http"
@@ -11,6 +13,15 @@ import (
 )
 
 var db *sql.DB
+
+var addr = flag.String("addr", "localhost:3001", "http service address")
+
+var upgrade = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
+
+var conn websocket.Conn
 
 const (
 	dbhost = "localhost"
@@ -34,12 +45,8 @@ type Article struct {
 }
 
 type User struct {
-	ID 					int
-	Name 				string
-}
-
-type Collection struct {
-	Index []Article
+	ID   int
+	Name string
 }
 
 type Group struct {
@@ -48,8 +55,10 @@ type Group struct {
 
 func main() {
 	initDb()
-	http.HandleFunc("/api/articles", articlesHandler)
+
+	http.HandleFunc("/api/cable", articlesHandler)
 	http.HandleFunc("/api/users", usersHandler)
+
 	defer db.Close()
 
 	log.Fatal(http.ListenAndServe("localhost:3001", nil))
@@ -72,25 +81,17 @@ func initDb() {
 	fmt.Println("Successfully connected!")
 }
 
-func articlesHandler(w http.ResponseWriter, _ *http.Request) {
-	collection := Collection{}
+func articlesHandler(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrade.Upgrade(w, r, nil)
 
-	err := queryArticles(&collection)
+	err = queryArticles(&conn)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
-
-	out, err := json.Marshal(collection)
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
-
-	fmt.Fprintf(w, string(out))
 }
 
-func queryArticles(collection *Collection) error {
+func queryArticles(conn **websocket.Conn) error {
 	rows, err := db.Query(`SELECT t.* FROM collections.articles t LIMIT 50`)
 	if err != nil {
 		return err
@@ -111,11 +112,13 @@ func queryArticles(collection *Collection) error {
 			&article.ExternalReferenceID,
 			&article.createdAt,
 			&article.UpdatedAt)
+
+		err = (*conn).WriteJSON(&article)
+
 		if err != nil {
 			return err
 		}
-
-		collection.Index = append(collection.Index, article)
+		fmt.Println(article)
 	}
 
 	err = rows.Err()
@@ -170,6 +173,3 @@ func queryUsers(group *Group) error {
 	}
 	return nil
 }
-
-
-
