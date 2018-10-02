@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/gorilla/websocket"
-	_ "github.com/lib/pq"
 	"log"
 	"net/http"
+	"strings"
 	"time"
+
+	"github.com/gorilla/websocket"
+	_ "github.com/lib/pq"
 )
 
 var db *sql.DB
@@ -31,10 +33,11 @@ const (
 	dbname = "lecheleccion"
 )
 
+// Article is the model Article with all relevant fields
 type Article struct {
 	ID                  int
 	URL                 string
-	UrlToImage          string
+	URLToImage          string
 	Source              string
 	PublicationDate     time.Time
 	Title               string
@@ -44,11 +47,13 @@ type Article struct {
 	UpdatedAt           time.Time
 }
 
+// User corresponds to the Model User
 type User struct {
 	ID   int
 	Name string
 }
 
+// Group a group of Users
 type Group struct {
 	Index []User
 }
@@ -82,16 +87,35 @@ func initDb() {
 }
 
 func articlesHandler(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrade.Upgrade(w, r, nil)
+	var msgType int
+	var msg []byte
+	var err error
 
-	err = queryArticles(&conn)
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
+	conn, _ := upgrade.Upgrade(w, r, nil)
+
+	for {
+		msgType, msg, err = conn.ReadMessage()
+		if err != nil {
+			return
+		}
+		fmt.Printf("%s sent by %s: %s\n", conn.RemoteAddr(), string(msgType), string(msg))
+
+		err = queryArticles(&conn, &msg)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
 	}
 }
 
-func queryArticles(conn **websocket.Conn) error {
+func queryArticles(conn **websocket.Conn, msg *[]byte) error {
+	var searchTerms []string
+	if msg == nil {
+		searchTerms[0] = "t.*"
+	} else {
+		searchTerms = strings.Split(string(*msg), " ")
+	}
+
 	rows, err := db.Query(`SELECT t.* FROM collections.articles t LIMIT 50`)
 	if err != nil {
 		return err
@@ -104,7 +128,7 @@ func queryArticles(conn **websocket.Conn) error {
 		err = rows.Scan(
 			&article.ID,
 			&article.URL,
-			&article.UrlToImage,
+			&article.URLToImage,
 			&article.Source,
 			&article.PublicationDate,
 			&article.Title,
