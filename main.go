@@ -18,9 +18,10 @@ var db *sql.DB
 
 var addr = flag.String("addr", "localhost:3001", "http service address")
 
-var upgrade = websocket.Upgrader{
+var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+
 }
 
 var conn websocket.Conn
@@ -91,7 +92,16 @@ func articlesHandler(w http.ResponseWriter, r *http.Request) {
 	var msg []byte
 	var err error
 
-	conn, _ := upgrade.Upgrade(w, r, nil)
+	upgrader.CheckOrigin = func(r *http.Request) bool {
+		return true
+	}
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Print("upgrade:", err)
+		return
+	}
+
+	defer conn.Close()
 
 	for {
 		msgType, msg, err = conn.ReadMessage()
