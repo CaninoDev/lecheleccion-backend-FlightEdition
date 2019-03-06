@@ -34,6 +34,11 @@ const (
 	dbname = "lecheleccion"
 )
 
+type Message struct {
+	Type string `json:"type"`
+	Payload string `json:"payload"`
+}
+
 // Article is the model Article with all relevant fields
 type Article struct {
 	ID                  int
@@ -88,7 +93,7 @@ func initDb() {
 }
 
 func articlesHandler(w http.ResponseWriter, r *http.Request) {
-	var msgType int
+	//var msgType int
 	var msg []byte
 	var err error
 
@@ -104,17 +109,27 @@ func articlesHandler(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	for {
-		msgType, msg, err = conn.ReadMessage()
+		_, msg, err = conn.ReadMessage()
 		if err != nil {
 			return
 		}
-		fmt.Printf("%s sent by %s: %s\n", conn.RemoteAddr(), string(msgType), string(msg))
 
-		err = queryArticles(&conn, &msg)
-		if err != nil {
-			http.Error(w, err.Error(), 500)
-			return
+		var message Message
+		if err := json.Unmarshal(msg, &message); err != nil {
+			panic(err)
 		}
+		fmt.Printf("%s sent type: %s payload: %s\n", conn.RemoteAddr(), string(message.Type), string(message.Payload))
+
+		switch message.Type {
+		case "requestArticles":
+
+			err = queryArticles(&conn, &msg)
+			if err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+		}
+
 	}
 }
 
@@ -152,7 +167,7 @@ func queryArticles(conn **websocket.Conn, msg *[]byte) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println(article)
+		//fmt.Println(article)
 	}
 
 	err = rows.Err()
