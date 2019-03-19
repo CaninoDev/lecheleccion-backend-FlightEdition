@@ -15,12 +15,12 @@ const (
 	dbhost = "localhost"
 	dbport = 5432
 	dbuser = "caninodev"
-	dbpass = "80LgjYjvq6zcztiz"
-	dbname = "lecheleccion-api_development"
+	dbpass = "testing"
+	dbname = "lecheleccion"
 )
 
 func main() {
-	initDb()
+	initConnDB()
 	defer db.Close()
 	http.HandleFunc("/api/articles", articlesHandler)
 	http.HandleFunc("/api/users", usersHandler)
@@ -35,15 +35,10 @@ func usersHandler(w http.ResponseWriter, r *http.Request) {
 	// ...
 }
 
-func initDB() {
-	config := dbConfig()
-	var err error
-	psqlInfov := fmt.Sprint("host=%s port=%s user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-	dbhost, dbport,
-	dbuser, dbpass, dbname)
+func initConnDB() {
+	psqlInfo := fmt.Sprintf("host=%v port=%v user=%v password=%v dbname=%v sslmode=disable", dbhost, dbport, dbuser, dbpass, dbname)
 
-	db, err = sql.Open("postgres", psqlInfov)
+	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		panic(err)
 	}
