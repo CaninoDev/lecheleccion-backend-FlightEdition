@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
@@ -20,9 +21,38 @@ const (
 	dbname = "lecheleccion"
 )
 
+type Article struct {
+	ID                  int
+	URL                 string
+	URLToImage          string
+	Source              string
+	PublicationDate     time.Time
+	Title               string
+	Body                string
+	ExternalReferenceID int
+	CreateAt            time.Time
+	UpdatedAt           time.Time
+}
+
+type Bias struct {
+	ID           int
+	Libertarian  float32
+	Green        float32
+	Liberal      float32
+	Conservative float32
+	biasableType string
+	biasableID   int
+	createdAt    time.Time
+	updatedAt    time.Time
+}
+
 func main() {
 	initConnDB()
 	defer db.Close()
+	createRouter()
+}
+
+func createRouter() {
 	router := mux.NewRouter()
 	router.HandleFunc("/api/articles", GetArticles).Methods("GET")
 	router.HandleFunc("/api/article/{id}", GetArticle).Methods("GET")
