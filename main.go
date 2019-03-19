@@ -179,17 +179,17 @@ func biasHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func queryArticles(conn **websocket.Conn, msg *[]byte) error {
+func queryArticles(conn websocket.Conn, payload *string) {
 	var searchTerms []string
-	if msg == nil {
+	if payload == nil {
 		searchTerms[0] = "t.*"
 	} else {
-		searchTerms = strings.Split(string(*msg), " ")
+		searchTerms = strings.Split(string(*payload), " ")
 	}
 
 	rows, err := db.Query(`SELECT t.* FROM collections.articles t LIMIT 50`)
 	if err != nil {
-		return err
+		 log.Print("Error", err)
 	}
 
 	defer rows.Close()
