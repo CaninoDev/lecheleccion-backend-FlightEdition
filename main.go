@@ -133,7 +133,7 @@ func queryArticles(w http.ResponseWriter, payload string) {
 	json.NewEncoder(w).Encode(articles)
 }
 
-func initDB() {
+func initConnDB() {
 	var err error
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		dbhost, dbport,
