@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -208,18 +209,58 @@ func queryArticles(conn websocket.Conn, payload *string) {
 			&article.createdAt,
 			&article.UpdatedAt)
 
-		err = (*conn).WriteJSON(&article)
+		err = conn.WriteJSON(&article)
 
 		if err != nil {
-			return err
+			 log.Print("Error:", err)
 		}
 		//fmt.Println(article)
 	}
 
 	err = rows.Err()
 	if err != nil {
+		 log.Print("Error:", err)
+	}
+}
+
+func queryBias(conn websocket.Conn, payload *string) error {
+	 sqlStatement := `SELECT * FROM collections.biases WHERE id = $1;`
+
+	articleID, err := strconv.Atoi(*payload)
+	if err != nil {
 		return err
 	}
+	bias := Bias{}
+
+	row := db.QueryRow(sqlStatement, articleID)
+
+	switch err := row.Scan(
+		&bias.ID,
+		&bias.Libertarian,
+		&bias.Green,
+		&bias.Liberal,
+		&bias.Conservative,
+	   &bias.biasableType,
+	   &bias.biasableID,
+	   &bias.createdAt,
+	   &bias.updatedAt); err {
+	case sql.ErrNoRows:
+		msg := Message{}
+		msg = Message{
+			Type: "error",
+			Payload: "Bias not found for article!"}
+		conn.WriteJSON(&msg)
+		return err
+	case nil:
+		conn.WriteJSON(&bias)
+		return nil
+	default:
+		panic(err)
+	}
+	fmt.Printf("%s sending articleID: %v bias.ID: %v bias.Libertarian: %v\n", conn.RemoteAddr(), articleID, bias.ID, bias.Libertarian)
+
+
+
 	return nil
 }
 
