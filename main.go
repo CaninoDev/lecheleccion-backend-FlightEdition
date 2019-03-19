@@ -54,6 +54,19 @@ type Article struct {
 	UpdatedAt           time.Time
 }
 
+// Bias corresponds to the aforementioned data in the DB
+type Bias struct {
+	ID           int
+	Libertarian  float32
+	Green        float32
+	Liberal      float32
+	Conservative float32
+	biasableType string
+	biasableID int
+	createdAt time.Time
+	updatedAt time.Time
+}
+
 // User corresponds to the Model User
 type User struct {
 	ID   int
