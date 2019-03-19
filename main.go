@@ -30,12 +30,13 @@ const (
 	dbhost = "localhost"
 	dbport = "5432"
 	dbuser = "caninodev"
-	dbpass = "QpPkW4jkgLc1"
+	dbpass = "testing"
 	dbname = "lecheleccion"
 )
 
+// Message corresponds to the client's request for data of any type.
 type Message struct {
-	Type string `json:"type"`
+	Type    string `json:"type"`
 	Payload string `json:"payload"`
 }
 
