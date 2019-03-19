@@ -46,6 +46,11 @@ type Bias struct {
 	updatedAt    time.Time
 }
 
+type ClientMessage struct {
+	Type    string `json:"type"`
+	Payload string `json:"payload"`
+}
+
 func main() {
 	initConnDB()
 	defer db.Close()
