@@ -81,7 +81,8 @@ type Group struct {
 func main() {
 	initDb()
 
-	http.HandleFunc("/api/cable", articlesHandler)
+	http.HandleFunc("/api/articles", articlesHandler)
+	http.HandleFunc("/api/bias", biasHandler)
 	http.HandleFunc("/api/users", usersHandler)
 
 	defer db.Close()
