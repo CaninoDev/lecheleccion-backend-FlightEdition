@@ -2,10 +2,11 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
-	"fmt"
-	"os"
+
+	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 )
 
@@ -22,16 +23,28 @@ const (
 func main() {
 	initConnDB()
 	defer db.Close()
-	http.HandleFunc("/api/articles", articlesHandler)
-	http.HandleFunc("/api/users", usersHandler)
-	log.Fatal(http.ListenAndServe("localhost:3001", nil))
+	router := mux.NewRouter()
+	router.HandleFunc("/api/articles", GetArticles).Methods("GET")
+	router.HandleFunc("/api/article/{id}", GetArticle).Methods("GET")
+	router.HandleFunc("/api/bias/{id}", GetBias).Methods("GET")
+	router.HandleFunc("/api/user/{id}", GetUser).Methods("GET")
+	log.Fatal(http.ListenAndServe(":3001", router))
 }
 
-func articlesHandler(w http.ResponseWriter, r *http.Request) {
+func GetArticles(w http.ResponseWriter, r *http.Request) {
+
 	// ...
 }
 
-func usersHandler(w http.ResponseWriter, r *http.Request) {
+func GetArticle(w http.ResponseWriter, r *http.Request) {
+	// ...
+}
+
+func GetBias(w http.ResponseWriter, r *http.Request) {
+	// ...
+}
+
+func GetUser(w http.ResponseWriter, r *http.Request) {
 	// ...
 }
 
