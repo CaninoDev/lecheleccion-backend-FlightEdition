@@ -143,16 +143,39 @@ func articlesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-		switch message.Type {
-		case "requestArticles":
+func biasHandler(w http.ResponseWriter, r *http.Request) {
+	//var msgType int
+	var msg []byte
+	var err error
 
-			err = queryArticles(&conn, &msg)
-			if err != nil {
-				http.Error(w, err.Error(), 500)
-				return
-			}
+	upgrader.CheckOrigin = func(r *http.Request) bool {
+		return true
+	}
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Print("upgrade:", err)
+		return
+	}
+
+	defer conn.Close()
+
+	for {
+		_, msg, err = conn.ReadMessage()
+		if err != nil {
+			return
 		}
 
+		var message Message
+		if err := json.Unmarshal(msg, &message); err != nil {
+			panic(err)
+		}
+		switch message.Type {
+			 case "bias":
+			 queryBias(*conn, &message.Payload)
+			 default:
+			 http.Error(w, "Malformed request or wrong endpoint.", 500)
+		}
+		fmt.Printf("%s sent type: %s payload: %s\n", conn.RemoteAddr(), string(message.Type), string(message.Payload))
 	}
 }
 
