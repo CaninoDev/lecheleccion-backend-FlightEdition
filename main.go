@@ -133,10 +133,13 @@ func queryArticles(w http.ResponseWriter, payload string) {
 	json.NewEncoder(w).Encode(articles)
 }
 
-func initConnDB() {
-	psqlInfo := fmt.Sprintf("host=%v port=%v user=%v password=%v dbname=%v sslmode=disable", dbhost, dbport, dbuser, dbpass, dbname)
+func initDB() {
+	var err error
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		dbhost, dbport,
+		dbuser, dbpass, dbname)
 
-	db, err := sql.Open("postgres", psqlInfo)
+	db, err = sql.Open("postgres", psqlInfo)
 	if err != nil {
 		panic(err)
 	}
