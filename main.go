@@ -105,7 +105,7 @@ func queryArticles(w http.ResponseWriter, payload string) {
 
 	var articles []Article
 
-	sqlStatement := `SELECT t.* FROM collections.articles LIMIT $1`
+	sqlStatement := `SELECT t.* FROM collections.articles t LIMIT $1`
 
 	rows, err := db.Query(sqlStatement, quantity)
 	if err != nil {
