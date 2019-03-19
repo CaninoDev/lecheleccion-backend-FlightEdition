@@ -133,7 +133,15 @@ func articlesHandler(w http.ResponseWriter, r *http.Request) {
 		if err := json.Unmarshal(msg, &message); err != nil {
 			panic(err)
 		}
+		switch message.Type {
+			 case "articles":
+			 queryArticles(*conn, &message.Payload)
+			 default:
+			 http.Error(w, "Malformed request or wrong endpoint.", 500)
+		}
 		fmt.Printf("%s sent type: %s payload: %s\n", conn.RemoteAddr(), string(message.Type), string(message.Payload))
+	}
+}
 
 		switch message.Type {
 		case "requestArticles":
