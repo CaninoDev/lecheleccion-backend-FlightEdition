@@ -30,7 +30,7 @@ type Article struct {
 	Title               string
 	Body                string
 	ExternalReferenceID int
-	CreateAt            time.Time
+	CreatedAt           time.Time
 	UpdatedAt           time.Time
 }
 
