@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -14,6 +15,8 @@ import (
 )
 
 var db *sql.DB
+
+var addr = flag.String("addr", "localhost:3001", "http service address")
 
 const (
 	dbhost = "localhost"
