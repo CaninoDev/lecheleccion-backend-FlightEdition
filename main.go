@@ -72,14 +72,11 @@ func createRouter() {
 }
 
 func GetArticles(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
 	var msg ClientMessage
 	err := json.NewDecoder(r.Body).Decode(&msg)
 	if err != nil {
 		log.Println("Error parsing client request.")
 	}
-	msg.Type = params["type"]
-	msg.Payload = params["payload"]
 	if msg.Type != "quantity" {
 		log.Println("Malformed request or wrong endpoint")
 	}
