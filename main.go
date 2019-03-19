@@ -2,9 +2,11 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -93,6 +95,42 @@ func GetBias(w http.ResponseWriter, r *http.Request) {
 
 func GetUser(w http.ResponseWriter, r *http.Request) {
 	// ...
+}
+
+func queryArticles(w http.ResponseWriter, payload string) {
+	quantity, err := strconv.Atoi(payload)
+	if err != nil {
+		log.Print("Malformed JSON client request")
+	}
+
+	var articles []Article
+
+	sqlStatement := `SELECT t.* FROM collections.articles LIMIT $1`
+
+	rows, err := db.Query(sqlStatement, quantity)
+	if err != nil {
+		log.Print("Error: ", err)
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		article := Article{}
+		err = rows.Scan(
+			&article.ID,
+			&article.URL,
+			&article.URLToImage,
+			&article.Source,
+			&article.PublicationDate,
+			&article.Title,
+			&article.Body,
+			&article.ExternalReferenceID,
+			&article.CreatedAt,
+			&article.UpdatedAt)
+
+		articles = append(articles, article)
+	}
+	json.NewEncoder(w).Encode(articles)
 }
 
 func initConnDB() {
