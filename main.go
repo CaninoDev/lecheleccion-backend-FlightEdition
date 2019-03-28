@@ -75,14 +75,14 @@ func GetArticles(w http.ResponseWriter, r *http.Request) {
 	var msg ClientMessage
 	err := json.NewDecoder(r.Body).Decode(&msg)
 	if err != nil {
-		log.Println("Error parsing client request.")
+		log.Println("Error parsing client request")
 	}
 	if msg.Type != "quantity" {
 		log.Println("Malformed request or wrong endpoint")
 	}
-	queryArticles(w, msg.Payload)
+	articles := queryArticles(w, msg.Payload)
 
-	// ...
+	json.NewEncoder(w).Encode(articles)
 }
 
 func GetArticle(w http.ResponseWriter, r *http.Request) {
@@ -90,14 +90,24 @@ func GetArticle(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetBias(w http.ResponseWriter, r *http.Request) {
-	// ...
+	var msg ClientMessage
+	err := json.NewDecoder(r.Body).Decode(&msg)
+	if err != nil {
+		log.Println("Error parsing client request")
+	}
+	if msg.Type != "fetchBias" {
+		log.Println("Malformed request or wrong endpoint")
+	}
+	bias := queryBias(w, msg.Payload)
+
+	json.NewEncoder(w).Encode(bias)
 }
 
 func GetUser(w http.ResponseWriter, r *http.Request) {
 	// ...
 }
 
-func queryArticles(w http.ResponseWriter, payload string) {
+func queryArticles(w http.ResponseWriter, payload string) []Article {
 	quantity, err := strconv.Atoi(payload)
 	if err != nil {
 		log.Print("Malformed JSON client request")
@@ -130,10 +140,34 @@ func queryArticles(w http.ResponseWriter, payload string) {
 
 		articles = append(articles, article)
 	}
-	json.NewEncoder(w).Encode(articles)
+
+	return articles
+
 }
 
-func initDB() {
+func queryBias(w http.ResponseWriter, payload string) Bias {
+	var bias Bias
+
+	sqlStatement := `SELECT t.* FROM collections.bias t WHERE biasable_id = $1`
+
+	row := db.QueryRow(sqlStatement, payload)
+
+	err := row.Scan(
+		&bias.ID,
+		&bias.Libertarian,
+		&bias.Green,
+		&bias.Liberal,
+		&bias.Conservative,
+		&bias.biasableID)
+
+	if err != nil {
+		log.Print(err)
+	}
+
+	return bias
+}
+
+func initConnDB() {
 	var err error
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		dbhost, dbport,
@@ -149,5 +183,3 @@ func initDB() {
 	}
 	fmt.Println("Successfully connected!")
 }
-
-
