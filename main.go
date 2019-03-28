@@ -16,6 +16,8 @@ import (
 
 var db *sql.DB
 
+var router *mux.Router
+
 var addr = flag.String("addr", "localhost:3001", "http service address")
 
 const (
@@ -63,10 +65,10 @@ func main() {
 }
 
 func createRouter() {
-	router := mux.NewRouter()
+	router = mux.NewRouter()
 	router.HandleFunc("/api/articles", GetArticles).Methods("GET")
 	router.HandleFunc("/api/article/{id}", GetArticle).Methods("GET")
-	router.HandleFunc("/api/bias/{id}", GetBias).Methods("GET")
+	router.HandleFunc("/api/bias", GetBias).Methods("GET")
 	router.HandleFunc("/api/user/{id}", GetUser).Methods("GET")
 	log.Fatal(http.ListenAndServe(":3001", router))
 }
@@ -146,19 +148,27 @@ func queryArticles(w http.ResponseWriter, payload string) []Article {
 }
 
 func queryBias(w http.ResponseWriter, payload string) Bias {
+	articleID, err := strconv.Atoi(payload)
+	if err != nil {
+		log.Print("Malformed JSON client request")
+	}
+
 	var bias Bias
 
-	sqlStatement := `SELECT t.* FROM collections.bias t WHERE biasable_id = $1`
+	sqlStatement := `SELECT t.* FROM collections.biases t WHERE biasable_id = $1`
 
-	row := db.QueryRow(sqlStatement, payload)
+	row := db.QueryRow(sqlStatement, articleID)
 
-	err := row.Scan(
+	err = row.Scan(
 		&bias.ID,
 		&bias.Libertarian,
 		&bias.Green,
 		&bias.Liberal,
 		&bias.Conservative,
-		&bias.biasableID)
+		&bias.biasableType,
+		&bias.biasableID,
+		&bias.createdAt,
+		&bias.updatedAt)
 
 	if err != nil {
 		log.Print(err)
