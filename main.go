@@ -74,15 +74,15 @@ func createRouter() {
 }
 
 func GetArticles(w http.ResponseWriter, r *http.Request) {
-	var msg ClientMessage
-	err := json.NewDecoder(r.Body).Decode(&msg)
-	if err != nil {
-		log.Println("Error parsing client request")
-	}
-	if msg.Type != "quantity" {
-		log.Println("Malformed request or wrong endpoint")
-	}
-	articles := queryArticles(w, msg.Payload)
+	//var msg ClientMessage
+	//err := json.NewDecoder(r.Body).Decode(&msg)
+	//if err != nil {
+	//	log.Println("Error parsing client request")
+	//}
+	//if msg.Type != "quantity" {
+	//	log.Println("Malformed request or wrong endpoint")
+	//}
+	articles := queryArticles()
 
 	json.NewEncoder(w).Encode(articles)
 }
@@ -109,17 +109,17 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	// ...
 }
 
-func queryArticles(w http.ResponseWriter, payload string) []Article {
-	quantity, err := strconv.Atoi(payload)
-	if err != nil {
-		log.Print("Malformed JSON client request")
-	}
+func queryArticles() []Article {
+	//quantity, err := strconv.Atoi(payload)
+	//if err != nil {
+	//	log.Print("Malformed JSON client request")
+	//}
 
 	var articles []Article
 
-	sqlStatement := `SELECT t.* FROM collections.articles t LIMIT $1`
+	sqlStatement := `SELECT t.* FROM collections.articles t LIMIT 50`
 
-	rows, err := db.Query(sqlStatement, quantity)
+	rows, err := db.Query(sqlStatement)
 	if err != nil {
 		log.Print("Error: ", err)
 	}
