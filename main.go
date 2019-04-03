@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -67,54 +66,44 @@ func main() {
 func createRouter() {
 	router = mux.NewRouter()
 	router.HandleFunc("/api/articles", GetArticles).Methods("GET")
-	router.HandleFunc("/api/article/{id}", GetArticle).Methods("GET")
-	router.HandleFunc("/api/bias/{id}", GetBias).Methods("GET")
+	router.HandleFunc("/api/{requestType}/{id}", HandleType).Methods("GET")
 	router.HandleFunc("/api/user/{id}", GetUser).Methods("GET")
 	log.Fatal(http.ListenAndServe(":3001", router))
+}
+
+func HandleType(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	var jsonData []byte
+	var err error
+	articleID := params["id"]
+	switch params["requestType"] {
+	case "article":
+		data, err := queryArticle(articleID)
+		if err == nil {
+			w.WriteHeader(http.StatusOK)
+		}
+		jsonData, err = json.Marshal(data)
+	case "bias":
+		data, err := queryBias(articleID)
+		if err == nil {
+			w.WriteHeader(http.StatusOK)
+		}
+		jsonData, err = json.Marshal(data)
+	default:
+		w.WriteHeader(http.StatusBadRequest)
+		err = json.NewEncoder(w).Encode([]byte("Malformed params. Please try again."))
+	}
+	_, err = w.Write(jsonData)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(err)
+	}
 }
 
 func GetArticles(w http.ResponseWriter, r *http.Request) {
 	articles := queryArticles()
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(articles)
-}
-
-func GetArticle(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-
-	articleID, err := strconv.Atoi(params["id"])
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Malformed params. Please try again."))
-	} else {
-		article, err := queryArticle(articleID)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(err)
-		} else {
-			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(article)
-		}
-	}
-}
-
-func GetBias(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-
-	articleID, err := strconv.Atoi(params["id"])
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Malformed params. Please try again."))
-	} else {
-		bias, err := queryBias(articleID)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(err)
-		} else {
-			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(bias)
-		}
-	}
 }
 
 func GetUser(w http.ResponseWriter, r *http.Request) {
@@ -154,12 +143,30 @@ func queryArticles() []Article {
 
 }
 
-func queryArticle(articleID int) *Article {
-	//...
-	return nil
+func queryArticle(articleID string) (Article, error) {
+	article := Article{}
+
+	log.Print(articleID)
+	sqlStatement := `SELECT t.* FROM collections.articles t WHERE id = $1`
+
+	row := db.QueryRow(sqlStatement, articleID)
+
+	err := row.Scan(
+		&article.ID,
+		&article.URL,
+		&article.URLToImage,
+		&article.Source,
+		&article.PublicationDate,
+		&article.Title,
+		&article.Body,
+		&article.ExternalReferenceID,
+		&article.CreatedAt,
+		&article.UpdatedAt)
+
+	return article, err
 }
 
-func queryBias(articleID int) (Bias, error) {
+func queryBias(articleID string) (Bias, error) {
 	var bias Bias
 
 	sqlStatement := `SELECT t.* FROM collections.biases t WHERE biasable_id = $1`
