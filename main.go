@@ -80,7 +80,22 @@ func GetArticles(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetArticle(w http.ResponseWriter, r *http.Request) {
-	//...
+	params := mux.Vars(r)
+
+	articleID, err := strconv.Atoi(params["id"])
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Malformed params. Please try again."))
+	} else {
+		article, err := queryArticle(articleID)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(err)
+		} else {
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(article)
+		}
+	}
 }
 
 func GetBias(w http.ResponseWriter, r *http.Request) {
