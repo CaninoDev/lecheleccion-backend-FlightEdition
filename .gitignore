@@ -1,0 +1,12 @@
+# IDE preferences directories
+.idea
+.vscode
+
+# Test binary
+*.text
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# The binary itself
+backend
