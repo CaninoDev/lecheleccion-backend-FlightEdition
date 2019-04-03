@@ -68,7 +68,7 @@ func createRouter() {
 	router = mux.NewRouter()
 	router.HandleFunc("/api/articles", GetArticles).Methods("GET")
 	router.HandleFunc("/api/article/{id}", GetArticle).Methods("GET")
-	router.HandleFunc("/api/bias", GetBias).Methods("GET")
+	router.HandleFunc("/api/bias/{id}", GetBias).Methods("GET")
 	router.HandleFunc("/api/user/{id}", GetUser).Methods("GET")
 	log.Fatal(http.ListenAndServe(":3001", router))
 }
@@ -84,17 +84,22 @@ func GetArticle(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetBias(w http.ResponseWriter, r *http.Request) {
-	var msg ClientMessage
-	err := json.NewDecoder(r.Body).Decode(&msg)
-	if err != nil {
-		log.Println("Error parsing client request")
-	}
-	if msg.Type != "fetchBias" {
-		log.Println("Malformed request or wrong endpoint")
-	}
-	bias := queryBias(w, msg.Payload)
+	params := mux.Vars(r)
 
-	json.NewEncoder(w).Encode(bias)
+	articleID, err := strconv.Atoi(params["id"])
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Malformed params. Please try again."))
+	} else {
+		bias, err := queryBias(articleID)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(err)
+		} else {
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(bias)
+		}
+	}
 }
 
 func GetUser(w http.ResponseWriter, r *http.Request) {
@@ -134,19 +139,19 @@ func queryArticles() []Article {
 
 }
 
-func queryBias(w http.ResponseWriter, payload string) Bias {
-	articleID, err := strconv.Atoi(payload)
-	if err != nil {
-		log.Print("Malformed JSON client request")
-	}
+func queryArticle(articleID int) *Article {
+	//...
+	return nil
+}
 
+func queryBias(articleID int) (Bias, error) {
 	var bias Bias
 
 	sqlStatement := `SELECT t.* FROM collections.biases t WHERE biasable_id = $1`
 
 	row := db.QueryRow(sqlStatement, articleID)
 
-	err = row.Scan(
+	err := row.Scan(
 		&bias.ID,
 		&bias.Libertarian,
 		&bias.Green,
@@ -157,11 +162,7 @@ func queryBias(w http.ResponseWriter, payload string) Bias {
 		&bias.createdAt,
 		&bias.updatedAt)
 
-	if err != nil {
-		log.Print(err)
-	}
-
-	return bias
+	return bias, err
 }
 
 func initConnDB() {
