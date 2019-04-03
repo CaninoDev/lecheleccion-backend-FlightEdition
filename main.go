@@ -74,21 +74,13 @@ func createRouter() {
 }
 
 func GetArticles(w http.ResponseWriter, r *http.Request) {
-	//var msg ClientMessage
-	//err := json.NewDecoder(r.Body).Decode(&msg)
-	//if err != nil {
-	//	log.Println("Error parsing client request")
-	//}
-	//if msg.Type != "quantity" {
-	//	log.Println("Malformed request or wrong endpoint")
-	//}
 	articles := queryArticles()
-
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(articles)
 }
 
 func GetArticle(w http.ResponseWriter, r *http.Request) {
-	// ...
+	//...
 }
 
 func GetBias(w http.ResponseWriter, r *http.Request) {
@@ -110,11 +102,6 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func queryArticles() []Article {
-	//quantity, err := strconv.Atoi(payload)
-	//if err != nil {
-	//	log.Print("Malformed JSON client request")
-	//}
-
 	var articles []Article
 
 	sqlStatement := `SELECT t.* FROM collections.articles t LIMIT 50`
