@@ -1,4 +1,4 @@
-# Backend for Lecheeleciión (Refactored)
+# Backend for Lecheelección (Refactored)
 ## Concept
 Initially this backend was written in Ruby on Rails (See the original (project)[https://github.com/CaninoDev/lecheleccion])As an exercise this is re-implemented in Go.
 ## Notes
