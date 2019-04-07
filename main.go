@@ -52,11 +52,6 @@ type Bias struct {
 	updatedAt    time.Time
 }
 
-type ClientMessage struct {
-	Type    string `json:"type"`
-	Payload string `json:"payload"`
-}
-
 func main() {
 	initConnDB()
 	defer db.Close()
@@ -66,6 +61,7 @@ func main() {
 func createRouter() {
 	router = mux.NewRouter()
 	router.HandleFunc("/api/articles", GetArticles).Methods("GET")
+	router.HandleFunc("/api/articles/averages", GetAverages).Methods("GET")
 	router.HandleFunc("/api/{requestType}/{id}", HandleType).Methods("GET")
 	router.HandleFunc("/api/user/{id}", GetUser).Methods("GET")
 	log.Fatal(http.ListenAndServe(":3001", router))
@@ -97,6 +93,33 @@ func HandleType(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(err)
+	}
+}
+
+func GetAverages(w http.ResponseWriter, r *http.Request) {
+
+	type biasAverages struct {
+		Libertarian  float32
+		Green        float32
+		Liberal      float32
+		Conservative float32
+	}
+
+	var articlesBiasAverage biasAverages
+	sqlStatement := `SELECT AVG(t.Libertarian) AS "Libertarian", AVG(t.Green) AS "Green", AVG(t.Liberal) AS "Liberal", AVG(t.Conservative) AS "Conservative" FROM collections.biases t;`
+
+	row := db.QueryRow(sqlStatement)
+	err := row.Scan(
+		&articlesBiasAverage.Libertarian,
+		&articlesBiasAverage.Green,
+		&articlesBiasAverage.Liberal,
+		&articlesBiasAverage.Conservative,
+	)
+
+	if err != nil {
+		json.NewEncoder(w).Encode(err)
+	} else {
+		json.NewEncoder(w).Encode(articlesBiasAverage)
 	}
 }
 
