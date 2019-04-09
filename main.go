@@ -42,21 +42,21 @@ type Article struct {
 
 type BiasMeta struct {
 	ID           int
-	Libertarian  float32
-	Green        float32
-	Liberal      float32
-	Conservative float32
+	Librt        float32
+	Grn          float32
+	Lbrl         float32
+	Cnsvrt      float32
 	biasableType string
 	biasableID   int
 	createdAt    time.Time
 	updatedAt    time.Time
 }
 type ArticlesMessage struct {
-	Articles     []Article
-	Libertarian  float32
-	Green        float32
-	Liberal      float32
-	Conservative float32
+	Articles []Article
+	Librt    float32
+	Grn      float32
+	Lbrl     float32
+	Cnsvrt   float32
 }
 
 func main() {
@@ -103,15 +103,15 @@ func HandleType(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *ArticlesMessage) queryAverages() {
-	
+
 	sqlStatement := `SELECT AVG(t.Libertarian) AS "Libertarian", AVG(t.Green) AS "Green", AVG(t.Liberal) AS "Liberal", AVG(t.Conservative) AS "Conservative" FROM collections.biases t;`
 
 	row := db.QueryRow(sqlStatement)
 	err := row.Scan(
-		&a.Liberal,
-		&a.Conservative,
-		&a.Libertarian,
-		&a.Green,
+		&a.Librt,
+		&a.Grn,
+		&a.Lbrl,
+		&a.Cnsvrt,
 	)
 	if err != nil {
 		log.Print(err)
@@ -196,10 +196,10 @@ func queryBias(articleID string) (BiasMeta, error) {
 
 	err := row.Scan(
 		&bias.ID,
-		&bias.Libertarian,
-		&bias.Green,
-		&bias.Liberal,
-		&bias.Conservative,
+		&bias.Librt,
+		&bias.Grn,
+		&bias.Lbrl,
+		&bias.Cnsvrt,
 		&bias.biasableType,
 		&bias.biasableID,
 		&bias.createdAt,
