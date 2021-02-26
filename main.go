@@ -22,18 +22,10 @@ var addr = flag.String("addr", "localhost:3001", "http service address")
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
-
 }
 
 var conn websocket.Conn
 
-const (
-	dbhost = "localhost"
-	dbport = "5432"
-	dbuser = "caninodev"
-	dbpass = "testing"
-	dbname = "lecheleccion"
-)
 
 // Message corresponds to the client's request for data of any type.
 type Message struct {
@@ -63,9 +55,9 @@ type Bias struct {
 	Liberal      float32
 	Conservative float32
 	biasableType string
-	biasableID int
-	createdAt time.Time
-	updatedAt time.Time
+	biasableID   int
+	createdAt    time.Time
+	updatedAt    time.Time
 }
 
 // User corresponds to the Model User
@@ -80,7 +72,18 @@ type Group struct {
 }
 
 func main() {
-	initDb()
+	// Generate our config based on the config supplied
+	// by the user in the flags
+	cfg, err := ParseFlags()
+	if err != nil {
+		log.Fatal(err)
+	}
+	cfg.Server err := NewConfig(cfgPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	initDb(cfg.Server
 
 	http.HandleFunc("/api/articles", articlesHandler)
 	http.HandleFunc("/api/bias", biasHandler)
@@ -91,11 +94,11 @@ func main() {
 	log.Fatal(http.ListenAndServe("localhost:3001", nil))
 }
 
-func initDb() {
+func initDb(cfg Config) {
 	var err error
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		dbhost, dbport,
-		dbuser, dbpass, dbname)
+		cfg.Server.Host, cfg.Server.Port,
+		cfg.Server.User, cfg.Server.Pass, cfg.Server.Name)
 
 	db, err = sql.Open("postgres", psqlInfo)
 	if err != nil {
@@ -135,10 +138,10 @@ func articlesHandler(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 		switch message.Type {
-			 case "articles":
-			 queryArticles(*conn, &message.Payload)
-			 default:
-			 http.Error(w, "Malformed request or wrong endpoint.", 500)
+		case "articles":
+			queryArticles(*conn, &message.Payload)
+		default:
+			http.Error(w, "Malformed request or wrong endpoint.", 500)
 		}
 		fmt.Printf("%s sent type: %s payload: %s\n", conn.RemoteAddr(), string(message.Type), string(message.Payload))
 	}
@@ -171,10 +174,10 @@ func biasHandler(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 		switch message.Type {
-			 case "bias":
-			 queryBias(*conn, &message.Payload)
-			 default:
-			 http.Error(w, "Malformed request or wrong endpoint.", 500)
+		case "bias":
+			queryBias(*conn, &message.Payload)
+		default:
+			http.Error(w, "Malformed request or wrong endpoint.", 500)
 		}
 		fmt.Printf("%s sent type: %s payload: %s\n", conn.RemoteAddr(), string(message.Type), string(message.Payload))
 	}
@@ -190,7 +193,7 @@ func queryArticles(conn websocket.Conn, payload *string) {
 
 	rows, err := db.Query(`SELECT t.* FROM collections.articles t LIMIT 50`)
 	if err != nil {
-		 log.Print("Error", err)
+		log.Print("Error", err)
 	}
 
 	defer rows.Close()
@@ -212,19 +215,19 @@ func queryArticles(conn websocket.Conn, payload *string) {
 		err = conn.WriteJSON(&article)
 
 		if err != nil {
-			 log.Print("Error:", err)
+			log.Print("Error:", err)
 		}
 		//fmt.Println(article)
 	}
 
 	err = rows.Err()
 	if err != nil {
-		 log.Print("Error:", err)
+		log.Print("Error:", err)
 	}
 }
 
 func queryBias(conn websocket.Conn, payload *string) error {
-	 sqlStatement := `SELECT * FROM collections.biases WHERE id = $1;`
+	sqlStatement := `SELECT * FROM collections.biases WHERE id = $1;`
 
 	articleID, err := strconv.Atoi(*payload)
 	if err != nil {
@@ -240,14 +243,14 @@ func queryBias(conn websocket.Conn, payload *string) error {
 		&bias.Green,
 		&bias.Liberal,
 		&bias.Conservative,
-	   &bias.biasableType,
-	   &bias.biasableID,
-	   &bias.createdAt,
-	   &bias.updatedAt); err {
+		&bias.biasableType,
+		&bias.biasableID,
+		&bias.createdAt,
+		&bias.updatedAt); err {
 	case sql.ErrNoRows:
 		msg := Message{}
 		msg = Message{
-			Type: "error",
+			Type:    "error",
 			Payload: "Bias not found for article!"}
 		conn.WriteJSON(&msg)
 		return err
@@ -258,8 +261,6 @@ func queryBias(conn websocket.Conn, payload *string) error {
 		panic(err)
 	}
 	fmt.Printf("%s sending articleID: %v bias.ID: %v bias.Libertarian: %v\n", conn.RemoteAddr(), articleID, bias.ID, bias.Libertarian)
-
-
 
 	return nil
 }
